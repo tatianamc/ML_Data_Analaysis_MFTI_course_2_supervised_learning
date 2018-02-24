@@ -1,0 +1,486 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Загрузите датасет digits с помощью функции load_digits из sklearn.datasets и подготовьте матрицу признаков X и ответы на обучающей выборке y (вам потребуются поля data и target в объекте, который возвращает load_digits).\n",
+    "\n",
+    "Для оценки качества далее нужно будет использовать cross_val_score из sklearn.cross_validation с параметром cv=10. Эта функция реализует k-fold cross validation c k равным значению параметра cv. Мы предлагаем использовать k=10, чтобы полученные оценки качества имели небольшой разброс, и было проще проверить полученные ответы. На практике же часто хватает и k=5. Функция cross_val_score будет возвращать numpy.ndarray, в котором будет k чисел - качество в каждом из k экспериментов k-fold cross validation. Для получения среднего значения (которое и будет оценкой качества работы) вызовите метод .mean() у массива, который возвращает cross_val_score"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Populating the interactive namespace from numpy and matplotlib\n"
+     ]
+    }
+   ],
+   "source": [
+    "%pylab inline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn import datasets, svm,linear_model,cross_validation,learning_curve,metrics\n",
+    "digits = datasets.load_digits()\n",
+    "import numpy as np\n",
+    "import pandas as pd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.cross_validation import cross_val_score"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "X_digits = digits.data\n",
+    "y_digits = digits.target"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    " X : {array-like}, shape = [n_samples, n_features]\n",
+    "        Training vectors, where n_samples\n",
+    "        is the number of samples and\n",
+    "        n_features is the number of features.\n",
+    "    y : array-like, shape = [n_samples]\n",
+    "        Target values."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 135,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(1797, 64)"
+      ]
+     },
+     "execution_count": 135,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X_digits.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(1797,)"
+      ]
+     },
+     "execution_count": 29,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "y_digits.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "#digits"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "1 Создайте DecisionTreeClassifier с настройками по умолчанию и измерьте качество его работы с помощью cross_val_score. Эта величина и будет ответом в пункте 1."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 119,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.tree import DecisionTreeClassifier\n",
+    "from sklearn.ensemble import BaggingClassifier"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 120,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.83038036593426978"
+      ]
+     },
+     "execution_count": 120,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tree = DecisionTreeClassifier()\n",
+    "cvs=cross_val_score(tree, X_digits, y_digits, cv=10)\n",
+    "crossvalscore\n",
+    "cvs.mean()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 122,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.925483487993\n"
+     ]
+    }
+   ],
+   "source": [
+    "bag = BaggingClassifier(base_estimator=tree,n_estimators=100)\n",
+    "bag.fit(X_digits,y_digits)\n",
+    "cvs=cross_val_score(bag,X_digits,y_digits,cv=10)\n",
+    "print(cvs.mean())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "2 (вверху решение) Воспользуйтесь BaggingClassifier из sklearn.ensemble, чтобы обучить бэггинг над DecisionTreeClassifier. Используйте в BaggingClassifier параметры по умолчанию, задав только количество деревьев равным 100.\n",
+    "\n",
+    "Качество классификации новой модели - ответ в пункте 2. Обратите внимание, как соотносится качество работы композиции решающих деревьев с качеством работы одного решающего дерева."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "3 Теперь изучите параметры BaggingClassifier и выберите их такими, чтобы каждый базовый алгоритм обучался не на всех d признаках, а на d‾‾√ случайных признаков. Качество работы получившегося классификатора - ответ в пункте 3. Корень из числа признаков - часто используемая эвристика в задачах классификации, в задачах регрессии же часто берут число признаков, деленное на три. Но в общем случае ничто не мешает вам выбирать любое другое число случайных признаков."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 134,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.922722768623\n"
+     ]
+    }
+   ],
+   "source": [
+    "bag1 = BaggingClassifier(base_estimator=tree,n_estimators=100,max_features=0.5)\n",
+    "bag1.fit(X_digits,y_digits)\n",
+    "cvs1=cross_val_score(bag,X_digits,y_digits,cv=10)\n",
+    "print(cvs1.mean())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "4 Наконец, давайте попробуем выбирать случайные признаки не один раз на все дерево, а при построении каждой вершины дерева. Сделать это несложно: нужно убрать выбор случайного подмножества признаков в BaggingClassifier и добавить его в DecisionTreeClassifier. Какой параметр за это отвечает, можно понять из документации sklearn, либо просто попробовать угадать (скорее всего, у вас сразу получится). Попробуйте выбирать опять же d‾‾√ признаков. Качество полученного классификатора на контрольной выборке и будет ответом в пункте 4."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 145,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "tree1 = DecisionTreeClassifier(max_features=0.5)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 146,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.944367905692\n"
+     ]
+    }
+   ],
+   "source": [
+    "bag1 = BaggingClassifier(base_estimator=tree1,n_estimators=100)\n",
+    "bag1.fit(X_digits,y_digits)\n",
+    "cvs1=cross_val_score(bag1,X_digits,y_digits,cv=10)\n",
+    "print(cvs1.mean())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Полученный в пункте 4 классификатор - бэггинг на рандомизированных деревьях (в которых при построении каждой вершины выбирается случайное подмножество признаков и разбиение ищется только по ним). Это в точности соответствует алгоритму Random Forest, поэтому почему бы не сравнить качество работы классификатора с RandomForestClassifier из sklearn.ensemble. Сделайте это, а затем изучите, как качество классификации на данном датасете зависит от количества деревьев, количества признаков, выбираемых при построении каждой вершины дерева, а также ограничений на глубину дерева. Для наглядности лучше построить графики зависимости качества от значений параметров, но для сдачи задания это делать не обязательно.\n",
+    "\n",
+    "На основе наблюдений выпишите через пробел номера правильных утверждений из приведенных ниже в порядке возрастания номера (это будет ответ в п.5)\n",
+    "\n",
+    "1) Случайный лес сильно переобучается с ростом количества деревьев-нет Особенность случайного леса состоит в том, что он не переобучается при росте числа базовых алгоритмов. За счет этого случайный лес считается одним из самых универсальных алгоритмов. У него практически нет гиперпараметров. Мы можем брать просто довольно большое число базовых деревьев и при этом будем получать хороший, не переобученный алгоритм.\n",
+    "\n",
+    "2)YES При очень маленьком числе деревьев (5, 10, 15), случайный лес работает хуже, чем при большем числе деревьев-да\n",
+    "\n",
+    "3) YES С ростом количества деревьев в случайном лесе, в какой-то момент деревьев становится достаточно для высокого качества классификации, а затем качество существенно не меняется. -Yes. \n",
+    "In general, the more trees you use the better get the results. However, the improvement decreases as the number of trees increases, i.e. at a certain point the benefit in prediction performance from learning more trees will be lower than the cost in computation time for learning these additional trees. ависимость качества случайных лесов при разном значении параметра q в зависимости от числа базовых алгоритмов. Видно, что при росте числа базовых алгоритмов ошибка на тесте уменьшается, в какой-то момент выходит на асимптоту и остается на этом уровне, не происходит роста ошибки при росте числа базовых алгоритмов. \n",
+    "\n",
+    "Random forests are ensemble methods, and you average over many trees. Similarly, if you want to estimate an average of a real-valued random variable (e.g. the average heigth of a citizen in your country) you can take a sample. The expected variance will decrease as the square root of the sample size, and at a certain point the cost of collecting a larger sample will be higher than the benefit in accuracy obtained from such larger sample.\n",
+    "\n",
+    "4) YES При большом количестве признаков (для данного датасета - 40, 50) качество классификации становится хуже, чем при малом количестве признаков (5, 10). Это связано с тем, что чем меньше признаков выбирается в каждом узле, тем более различными получаются деревья (ведь деревья сильно неустойчивы к изменениям в обучающей выборке), и тем лучше работает их композиция.\n",
+    "\n",
+    "5) При большом количестве признаков (40, 50, 60) качество классификации лучше, чем при малом количестве признаков (5, 10). Это связано с тем, что чем больше признаков - тем больше информации об объектах, а значит алгоритм может делать прогнозы более точно. NO\n",
+    "\n",
+    "6) При небольшой максимальной глубине деревьев (5-6) качество работы случайного леса намного лучше, чем без ограничения глубины, т.к. деревья получаются не переобученными. С ростом глубины деревьев качество ухудшается.-нет\n",
+    "\n",
+    "7) При небольшой максимальной глубине деревьев (5-6) качество работы случайного леса заметно хуже, чем без ограничений, т.к. деревья получаются недообученными. С ростом глубины качество сначала улучшается, а затем не меняется существенно, т.к. из-за усреднения прогнозов и различий деревьев их переобученность в бэггинге не сказывается на итоговом качестве (все деревья преобучены по-разному, и при усреднении они компенсируют переобученность друг-друга).-Да\n",
+    "\n",
+    "ПРАВИЛЬНЫЕ ОТВЕТЫ 2 3 4 7"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 193,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.ensemble import RandomForestClassifier"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 154,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "forest = RandomForestClassifier(n_estimators=10,bootstrap=True, random_state=123)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 155,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',\n",
+       "            max_depth=None, max_features='auto', max_leaf_nodes=None,\n",
+       "            min_samples_leaf=1, min_samples_split=2,\n",
+       "            min_weight_fraction_leaf=0.0, n_estimators=10, n_jobs=1,\n",
+       "            oob_score=False, random_state=123, verbose=0, warm_start=False)"
+      ]
+     },
+     "execution_count": 155,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "forest.fit(X_digits,y_digits)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 177,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.920398880748\n"
+     ]
+    }
+   ],
+   "source": [
+    "cvs1=cross_val_score(forest,X_digits,y_digits,cv=10)\n",
+    "print(cvs1.mean())\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 173,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.951103309525\n"
+     ]
+    }
+   ],
+   "source": [
+    "forest2 = RandomForestClassifier(n_estimators=100,bootstrap=True, random_state=123)\n",
+    "forest2.fit(X_digits,y_digits)\n",
+    "cvs2=cross_val_score(forest2,X_digits,y_digits,cv=10)\n",
+    "print(cvs2.mean())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 192,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.870857418239\n"
+     ]
+    }
+   ],
+   "source": [
+    "forest2 = RandomForestClassifier(n_estimators=5,bootstrap=True, random_state=123)\n",
+    "forest2.fit(X_digits,y_digits)\n",
+    "cvs2=cross_val_score(forest2,X_digits,y_digits,cv=10)\n",
+    "print(cvs2.mean())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 191,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.94945530203\n"
+     ]
+    }
+   ],
+   "source": [
+    "#уменьшила кол-во признаков до 8 (корень кв из 64), рез-т ухудшился\n",
+    "forest2 = RandomForestClassifier(n_estimators=100,bootstrap=True, random_state=123,max_features=10)\n",
+    "forest2.fit(X_digits,y_digits)\n",
+    "cvs2=cross_val_score(forest2,X_digits,y_digits,cv=10)\n",
+    "print(cvs2.mean())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 187,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.950498544387\n"
+     ]
+    }
+   ],
+   "source": [
+    "forest2 = RandomForestClassifier(n_estimators=50,bootstrap=True, random_state=123)\n",
+    "forest2.fit(X_digits,y_digits)\n",
+    "cvs2=cross_val_score(forest2,X_digits,y_digits,cv=10)\n",
+    "print(cvs2.mean())"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python [default]",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.5.2"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 1
+}
